@@ -1,5 +1,6 @@
 # temp build files/directories
 out
+dist
 
 # IDE/Text editor specific
 .idea
