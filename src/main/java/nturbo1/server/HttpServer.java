@@ -1,5 +1,6 @@
 package nturbo1.server;
 
+import nturbo1.log.FatalLevel;
 import nturbo1.log.FixMeLevel;
 
 import java.io.IOException;
@@ -35,7 +36,7 @@ public class HttpServer
         }
         catch (IOException ex)
         {
-            logger.severe("Failed to accept socket connection because: " + ex.getMessage());
+            logger.log(FatalLevel.FATAL, "Failed to accept socket connection because: " + ex.getMessage());
         }
     }
 

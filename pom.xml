@@ -11,6 +11,7 @@
 
     <properties>
         <maven.shade.plugin.version>3.6.1</maven.shade.plugin.version>
+        <jar.name>httpserver</jar.name>
     </properties>
 
     <dependencies>
@@ -43,6 +44,7 @@
                                     <mainClass>nturbo1.HttpServerApplication</mainClass>
                                 </transformer>
                             </transformers>
+                            <finalName>${jar.name}</finalName>
                         </configuration>
                     </execution>
                 </executions>

@@ -1,6 +1,7 @@
 package nturbo1;
 
 import nturbo1.log.ErrorLevel;
+import nturbo1.log.FatalLevel;
 import nturbo1.log.FixMeLevel;
 import nturbo1.log.LogConfig;
 import nturbo1.server.HttpServer;
@@ -28,7 +29,7 @@ public class HttpServerApplication
         HttpServer httpServer = init();
         if (httpServer == null)
         {
-            logger.severe("Failed to initialize an http server! Exiting...");
+            logger.log(FatalLevel.FATAL,"Failed to initialize an http server! Exiting...");
             System.exit(1);
         }
 
