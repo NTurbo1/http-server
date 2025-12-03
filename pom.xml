@@ -12,6 +12,7 @@
     <properties>
         <maven.shade.plugin.version>3.6.1</maven.shade.plugin.version>
         <jar.name>httpserver</jar.name>
+        <maven.compiler.release>21</maven.compiler.release>
     </properties>
 
     <dependencies>
