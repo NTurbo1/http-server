@@ -1,13 +1,12 @@
 package nturbo1;
 
-import nturbo1.log.ErrorLevel;
-import nturbo1.log.FatalLevel;
-import nturbo1.log.FixMeLevel;
+import nturbo1.cmd.CommandLineParser;
+import nturbo1.exceptions.cmd.UnknownArgException;
+import nturbo1.exceptions.cmd.WrongArgFormatException;
 import nturbo1.log.LogConfig;
 import nturbo1.server.HttpServer;
 
-import java.io.IOException;
-import java.util.logging.Logger;
+import java.util.Map;
 
 /**
  * The HTTP Server application.
@@ -15,40 +14,30 @@ import java.util.logging.Logger;
  */
 public class HttpServerApplication
 {
-    static
-    {
-        LogConfig.setup();
-    }
-
-    private static final Logger logger = Logger.getLogger(HttpServerApplication.class.getName());
-
     public static void main( String[] args )
     {
-        logger.log(FixMeLevel.FIXME, "IMPLEMENT COMMAND LINE PARSER!!!");
+        Map<String, String> argsMap = parseArgs(args);
+        LogConfig.setup(argsMap);
+        HttpServer httpServer = HttpServer.init(argsMap);
 
-        HttpServer httpServer = init();
         if (httpServer == null)
         {
-            logger.log(FatalLevel.FATAL,"Failed to initialize an http server! Exiting...");
+            System.out.println("Failed to initialize an http server! Exiting...");
             System.exit(1);
         }
 
         httpServer.start();
     }
 
-    private static HttpServer init()
+    private static Map<String, String> parseArgs(String[] args)
     {
-        logger.info("Initializing an http server...");
-        HttpServer httpServer = null;
-        try
-        {
-            httpServer = new HttpServer(8080); // TODO: get the port from a command line parameter
-        }
-        catch(IOException ex)
-        {
-            logger.log(ErrorLevel.ERROR, ex.getMessage());
+        try {
+            return CommandLineParser.parseArgs(args);
+        } catch (WrongArgFormatException | UnknownArgException e) {
+            System.out.println(e.getMessage());
+            System.exit(1);
         }
 
-        return httpServer;
+        return null;
     }
 }

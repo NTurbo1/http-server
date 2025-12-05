@@ -1,44 +1,73 @@
 package nturbo1.server;
 
-import nturbo1.log.FatalLevel;
-import nturbo1.log.FixMeLevel;
+import nturbo1.cmd.Argument;
+import nturbo1.log.CustomLogger;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.logging.Logger;
+import java.util.Map;
 
 public class HttpServer
 {
+    private final ServerSocket serverSocket;
     private final int port;
-    private ServerSocket serverSocket;
 
-    private static final Logger logger = Logger.getLogger(HttpServer.class.getName());
+    private static final int DEFAULT_PORT = 8080;
+    private static final CustomLogger log = CustomLogger.getLogger(HttpServer.class.getName());
 
-    public HttpServer(int port) throws IOException
+    private HttpServer(int port) throws IOException
     {
-        this.port = port;
         this.serverSocket = new ServerSocket(port);
+        this.port = port;
+    }
+
+    public static HttpServer init(Map<String, String> args)
+    {
+        log.info("Initializing an http server...");
+        HttpServer httpServer = null;
+        try
+        {
+            httpServer = new HttpServer(getPort(args));
+        }
+        catch(IOException ex)
+        {
+            log.error(ex.getMessage());
+        }
+
+        return httpServer;
     }
 
     public void start()
     {
-        logger.log(FixMeLevel.FIXME, "Handle requests asynchronously!");
+        log.info("Listening on port " + port + "...");
+        log.fixme("Handle requests asynchronously!");
 
-        try
+        while (true)
         {
-            Socket socket = this.serverSocket.accept();
-            InputStream iStream = socket.getInputStream();
-            byte[] bytes = new byte[1024];
-            iStream.read(bytes);
-            System.out.printf("Received: %s\n", new String(bytes));
-        }
-        catch (IOException ex)
-        {
-            logger.log(FatalLevel.FATAL, "Failed to accept socket connection because: " + ex.getMessage());
+            Socket socket;
+
+            try
+            {
+                socket = this.serverSocket.accept();
+            }
+            catch (IOException ex)
+            {
+                log.fatal("Failed to accept socket connection because: " + ex.getMessage());
+                break;
+            }
+
+            Connection conn = new Connection(socket);
+            conn.handle();
         }
     }
 
-    public int getPort() { return this.port; }
+    private static int getPort(Map<String, String> args)
+    {
+        String portVal = args.get(Argument.PORT);
+
+        return portVal != null ? Integer.parseInt(portVal) : DEFAULT_PORT;
+    }
+
+    public int getPort() { return port; }
 }
