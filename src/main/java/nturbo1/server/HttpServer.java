@@ -50,6 +50,7 @@ public class HttpServer
             try
             {
                 socket = this.serverSocket.accept();
+                log.debug("New connection: " + socket.toString());
             }
             catch (IOException ex)
             {
