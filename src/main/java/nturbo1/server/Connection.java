@@ -1,5 +1,9 @@
 package nturbo1.server;
 
+import nturbo1.exceptions.parser.HttpMessageParseException;
+import nturbo1.exceptions.parser.UnsupportedHttpVersionException;
+import nturbo1.http.parser.v1_1.HttpRequestParser;
+import nturbo1.http.v1_1.HttpRequest;
 import nturbo1.log.CustomLogger;
 
 import java.io.BufferedReader;
@@ -28,19 +32,24 @@ public class Connection
             return;
         }
 
-        BufferedReader bufReader = new BufferedReader(new InputStreamReader(iStream));
-
-        String line;
         try {
-            line = bufReader.readLine();
+            HttpRequest req = HttpRequestParser.parseHttpRequest(new BufferedReader(new InputStreamReader(iStream)));
+        } catch (HttpMessageParseException e) {
+            log.error("Failed to parse the HTTP request because: " + e.getMessage());
+            // TODO: SEND A PROPER HTTP RESPONSE!!!
+        } catch (UnsupportedHttpVersionException e) {
+            log.fixme("HANDLE UNSUPPORTED HTTP VERSION IN THE REQUEST CASE!!!!!!");
+            // TODO: SEND A PROPER HTTP RESPONSE!!!
         } catch (IOException e) {
-            log.error("Failed to read a line from the socket input stream reader due to: " + e.getMessage());
+            log.error("Failed to parse an HTTP Request due to: " + e.getMessage());
+            // TODO: SHOULD YOU SEND A RESPONSE HERE?
             close();
 
             return;
         }
 
-        log.fixme("IMPLEMENT HTTP REQUEST PARSER!!!");
+        log.fixme("HANDLE THE PARSED HTTP REQUEST AND SEND AN APPROPRIATE HTTP RESPONSE!!!");
+
         close();
     }
 

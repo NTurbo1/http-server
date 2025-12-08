@@ -1,0 +1,72 @@
+package nturbo1.http.parser.v1_1;
+
+import nturbo1.exceptions.parser.HttpMessageParseException;
+import nturbo1.exceptions.parser.UnsupportedHttpVersionException;
+import nturbo1.http.HttpMethod;
+import nturbo1.http.v1_1.HttpRequest;
+import nturbo1.log.CustomLogger;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+
+/**
+ * Request = Request-Line
+ *           *(( general-header
+ *            | request-header
+ *            | entity-header ) CRLF)
+ *           CRLF
+ *           [ message-body ]
+ * <p>
+ * Request-Line = Method SP Request-URI SP HTTP-Version CRLF
+ */
+public class HttpRequestParser
+{
+    private static final CustomLogger log = CustomLogger.getLogger(HttpRequestParser.class.getName());
+
+    public static HttpRequest parseHttpRequest(BufferedReader bufReader)
+            throws HttpMessageParseException, UnsupportedHttpVersionException, IOException
+    {
+        String reqLine;
+        try {
+            reqLine = bufReader.readLine();
+        } catch (IOException e) {
+            log.error("Failed to read a line from the socket input stream reader due to: " + e.getMessage());
+            throw e;
+        }
+
+        HttpRequest req = parseHttpRequestLine(reqLine, null);
+        log.fixme("PARSE THE HTTP REQUEST HEADERS!!!!!!");
+        log.fixme("PARSE THE HTTP REQUEST BODY IF NECESSARY!!!!!!!!!!!!!!!");
+
+        return req;
+    }
+
+    public static HttpRequest parseHttpRequestLine(String line, HttpRequest req)
+            throws HttpMessageParseException, UnsupportedHttpVersionException
+    {
+        String[] words = line.split(" "); // [Method, Request-URI, HTTP-Version]
+        if (words.length < 3)
+        {
+            throw new HttpMessageParseException("Not enough information in the HTTP Request Line: " + line);
+        }
+
+        HttpMethod method = HttpMessageParser.parseHttpMethod(words[0]);
+        log.fixme("IMPLEMENT REQUEST URI PARSER!!!"); // words[1]
+        float version = HttpMessageParser.parseHttpVersion(words[2]);
+        if (HttpMessageParser.HTTP_VERSION_1_1 != version)
+        {
+            throw new UnsupportedHttpVersionException(version);
+        }
+
+        if (req == null)
+        {
+            // TODO: Pass the URI here after it's parsed
+            return new HttpRequest(null, method, null, null, null);
+        }
+
+        req.setMethod(method);
+        // TODO: Set the URI here  after it's parsed
+
+        return req;
+    }
+}
