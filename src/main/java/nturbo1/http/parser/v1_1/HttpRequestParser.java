@@ -61,7 +61,7 @@ public class HttpRequestParser
         if (req == null)
         {
             // TODO: Pass the URI here after it's parsed
-            return new HttpRequest(null, method, null, null, null);
+            return new HttpRequest(method, null, null, null);
         }
 
         req.setMethod(method);
