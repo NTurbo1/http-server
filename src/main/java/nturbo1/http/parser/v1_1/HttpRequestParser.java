@@ -8,6 +8,7 @@ import nturbo1.log.CustomLogger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Request = Request-Line
@@ -35,7 +36,8 @@ public class HttpRequestParser
         }
 
         HttpRequest req = parseHttpRequestLine(reqLine, null);
-        log.fixme("PARSE THE HTTP REQUEST HEADERS!!!!!!");
+        Map<String, String> headers = HttpMessageParser.parseHttpMessageHeaders(bufReader);
+        req.setHeaders(headers);
         log.fixme("PARSE THE HTTP REQUEST BODY IF NECESSARY!!!!!!!!!!!!!!!");
 
         return req;
@@ -44,6 +46,7 @@ public class HttpRequestParser
     public static HttpRequest parseHttpRequestLine(String line, HttpRequest req)
             throws HttpMessageParseException, UnsupportedHttpVersionException
     {
+        log.debug("Parsing the HTTP Request Line...");
         String[] words = line.split(" "); // [Method, Request-URI, HTTP-Version]
         if (words.length < 3)
         {
@@ -61,12 +64,14 @@ public class HttpRequestParser
         if (req == null)
         {
             // TODO: Pass the URI here after it's parsed
+            log.debug("Successfully parsed the HTTP Request Line!");
             return new HttpRequest(method, null, null, null);
         }
 
         req.setMethod(method);
         // TODO: Set the URI here  after it's parsed
 
+        log.debug("Successfully parsed the HTTP Request Line!");
         return req;
     }
 }

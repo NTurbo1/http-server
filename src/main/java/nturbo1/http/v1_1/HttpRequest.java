@@ -17,4 +17,10 @@ public class HttpRequest extends HttpMessage
     }
 
     public void setURI(String URI) { this.URI = URI; }
+
+    @Override
+    public String toString()
+    {
+        return String.format("{Method: %s, Headers: %s, Body: %s}", this.getMethod(), this.getHeaders(), this.getBody());
+    }
 }

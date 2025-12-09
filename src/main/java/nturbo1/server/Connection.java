@@ -32,8 +32,9 @@ public class Connection
             return;
         }
 
+        HttpRequest req = null;
         try {
-            HttpRequest req = HttpRequestParser.parseHttpRequest(new BufferedReader(new InputStreamReader(iStream)));
+             req = HttpRequestParser.parseHttpRequest(new BufferedReader(new InputStreamReader(iStream)));
         } catch (HttpMessageParseException e) {
             log.error("Failed to parse the HTTP request because: " + e.getMessage());
             // TODO: SEND A PROPER HTTP RESPONSE!!!
@@ -47,6 +48,7 @@ public class Connection
 
             return;
         }
+        log.info("Request: " + req);
 
         log.fixme("HANDLE THE PARSED HTTP REQUEST AND SEND AN APPROPRIATE HTTP RESPONSE!!!");
 

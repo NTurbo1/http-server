@@ -30,6 +30,7 @@ public abstract class HttpMessage
     }
 
     // GETTERS
+    public HttpMethod getMethod() { return this.method; }
     public Map<String, String> getHeaders() { return this.headers; }
     public Object getBody() { return this.body; }
 

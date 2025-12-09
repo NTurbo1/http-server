@@ -4,6 +4,11 @@ import nturbo1.exceptions.parser.HttpMessageParseException;
 import nturbo1.http.HttpMethod;
 import nturbo1.log.CustomLogger;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 public class HttpMessageParser
 {
     public static final char CARRIAGE_RETURN_CHAR = 13;
@@ -47,5 +52,37 @@ public class HttpMessageParser
             log.error(e.getMessage());
             throw new HttpMessageParseException("Invalid HTTP version number: " + versionNum);
         }
+    }
+
+    public static Map<String, String> parseHttpMessageHeaders(BufferedReader bufReader)
+            throws HttpMessageParseException, IOException
+    {
+        log.debug("Parsing the HTTP Message Headers...");
+        Map<String, String> headers = new HashMap<>();
+        while (true) {
+            String line;
+            try {
+                line = bufReader.readLine();
+            } catch (IOException e) {
+                log.error("Failed to read the next line from buffer because: " + e.getMessage());
+                throw e;
+            }
+
+            if (line == null || line.isEmpty()) { break; }
+
+            String[] headerKV = line.split(":");
+            if (headerKV.length < 2)
+            {
+                throw new HttpMessageParseException("Invalid HTTP Message Header format: " + line);
+            }
+
+            String headerKey = headerKV[0].trim();
+            String headerValue = headerKV[1].trim();
+
+            headers.put(headerKey, headerValue);
+        }
+
+        log.debug("Successfully parsed the HTTP Message Headers!");
+        return headers;
     }
 }
