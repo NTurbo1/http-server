@@ -10,6 +10,7 @@ import nturbo1.util.Bytes;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -38,7 +39,7 @@ public class HttpRequestParser
         }
 
         HttpRequest req = parseHttpRequestLine(reqLine, null);
-        Map<String, String> headers = HttpMessageParser.parseHttpMessageHeaders(iStream);
+        Map<String, List<String>> headers = HttpMessageParser.parseHttpMessageHeaders(iStream);
         req.setHeaders(headers);
         req.setBody(HttpMessageParser.parseHttpMessageBody(iStream, headers));
 

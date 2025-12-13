@@ -2,6 +2,7 @@ package nturbo1.http.v1_1;
 
 import nturbo1.http.HttpMethod;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,12 +18,12 @@ import java.util.Map;
 public abstract class HttpMessage
 {
     private HttpMethod method;
-    private Map<String, String> headers;
+    private Map<String, List<String>> headers;
     private Object body;
 
     public HttpMessage() {}
 
-    public HttpMessage(HttpMethod method, Map<String, String> headers, Object body)
+    public HttpMessage(HttpMethod method, Map<String, List<String>> headers, Object body)
     {
         this.method = method;
         this.headers = headers;
@@ -31,11 +32,11 @@ public abstract class HttpMessage
 
     // GETTERS
     public HttpMethod getMethod() { return this.method; }
-    public Map<String, String> getHeaders() { return this.headers; }
+    public Map<String, List<String>> getHeaders() { return this.headers; }
     public Object getBody() { return this.body; }
 
     // SETTERS
     public void setMethod(HttpMethod method) { this.method = method; }
-    public void setHeaders(Map<String, String> headers) { this.headers = headers; }
+    public void setHeaders(Map<String, List<String>> headers) { this.headers = headers; }
     public void setBody(Object body) { this.body = body; }
 }

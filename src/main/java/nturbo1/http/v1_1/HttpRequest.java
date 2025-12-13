@@ -2,6 +2,7 @@ package nturbo1.http.v1_1;
 
 import nturbo1.http.HttpMethod;
 
+import java.util.List;
 import java.util.Map;
 
 public class HttpRequest extends HttpMessage
@@ -10,7 +11,7 @@ public class HttpRequest extends HttpMessage
 
     public HttpRequest() {}
 
-    public HttpRequest(HttpMethod method, Map<String, String> headers, Object body, String URI)
+    public HttpRequest(HttpMethod method, Map<String, List<String>> headers, Object body, String URI)
     {
         super(method, headers, body);
         this.URI = URI;

@@ -11,7 +11,9 @@ import nturbo1.util.Bytes;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class HttpMessageParser {
@@ -55,10 +57,10 @@ public class HttpMessageParser {
         }
     }
 
-    public static Map<String, String> parseHttpMessageHeaders(InputStream iStream)
+    public static Map<String, List<String>> parseHttpMessageHeaders(InputStream iStream)
             throws HttpMessageParseException, IOException {
         log.debug("Parsing the HTTP Message Headers...");
-        Map<String, String> headers = new HashMap<>();
+        Map<String, List<String>> headers = new HashMap<>();
         while (true) {
             String line;
             try {
@@ -79,15 +81,26 @@ public class HttpMessageParser {
 
             String headerKey = headerKV[0].trim().toLowerCase();
             String headerValue = headerKV[1].trim();
+            log.fixme("HANDLE COMMA-SEPARATED HTTP HEADER VALUES FOR CERTAIN HEADERS!!!");
 
-            headers.put(headerKey, headerValue);
+            List<String> headerValueList = headers.get(headerKey);
+            if (headerValueList == null)
+            {
+                headerValueList = new ArrayList<>();
+                headerValueList.add(headerValue);
+                headers.put(headerKey, headerValueList);
+            }
+            else
+            {
+                headerValueList.add(headerValue);
+            }
         }
 
         log.debug("Successfully parsed the HTTP Message Headers!");
         return headers;
     }
 
-    public static Object parseHttpMessageBody(InputStream iStream, Map<String, String> headers)
+    public static Object parseHttpMessageBody(InputStream iStream, Map<String, List<String>> headers)
             throws BadHttpRequestHeaderException, HttpMessageParseException, IOException {
         byte[] messageBodyBytes = readMessageBodyBytes(iStream, headers);
 
@@ -99,11 +112,11 @@ public class HttpMessageParser {
         return null;
     }
 
-    public static byte[] readMessageBodyBytes(InputStream iStream, Map<String, String> headers)
+    public static byte[] readMessageBodyBytes(InputStream iStream, Map<String, List<String>> headers)
             throws BadHttpRequestHeaderException, HttpMessageParseException, IOException
     {
-        String contentLength = headers.get(HttpEntityHeader.CONTENT_LENGTH.getName().toLowerCase());
-        String transferEncoding = headers.get(GeneralHeader.TRANSFER_ENCODING.getName().toLowerCase());
+        List<String> contentLength = headers.get(HttpEntityHeader.CONTENT_LENGTH.getName().toLowerCase());
+        List<String> transferEncoding = headers.get(GeneralHeader.TRANSFER_ENCODING.getName().toLowerCase());
 
         byte[] messageBodyBytes = null;
 
@@ -112,10 +125,10 @@ public class HttpMessageParser {
                     "Both '" + HttpEntityHeader.CONTENT_LENGTH.getName() + "' and '" +
                             GeneralHeader.TRANSFER_ENCODING.getName() + "' headers are present in the request."
             );
-        } else if (contentLength != null) {
-            messageBodyBytes = readHttpMessageBody(iStream, contentLength);
-        } else if (transferEncoding != null) {
-            String lowerCaseTransferEncoding = transferEncoding.toLowerCase();
+        } else if (contentLength != null && !contentLength.isEmpty()) {
+            messageBodyBytes = readHttpMessageBody(iStream, contentLength.getFirst());
+        } else if (transferEncoding != null && !transferEncoding.isEmpty()) {
+            String lowerCaseTransferEncoding = transferEncoding.getFirst().toLowerCase();
             if (lowerCaseTransferEncoding.equals("chunked")) {
                 messageBodyBytes = readChunkedHttpMessageBody(iStream);
             } else {
