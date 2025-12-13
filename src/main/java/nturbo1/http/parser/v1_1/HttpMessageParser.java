@@ -1,24 +1,27 @@
 package nturbo1.http.parser.v1_1;
 
+import nturbo1.exceptions.parser.BadHttpRequestHeaderException;
 import nturbo1.exceptions.parser.HttpMessageParseException;
 import nturbo1.http.HttpMethod;
+import nturbo1.http.v1_1.GeneralHeader;
+import nturbo1.http.v1_1.HttpEntityHeader;
 import nturbo1.log.CustomLogger;
+import nturbo1.util.Bytes;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HttpMessageParser
-{
+public class HttpMessageParser {
     public static final char CARRIAGE_RETURN_CHAR = 13;
     public static final char LINE_FEED_CHAR = 10;
     public static final float HTTP_VERSION_1_1 = 1.1f;
 
     private static final CustomLogger log = CustomLogger.getLogger(HttpMessageParser.class.getName());
 
-    public static HttpMethod parseHttpMethod(String method) throws HttpMessageParseException
-    {
+    public static HttpMethod parseHttpMethod(String method) throws HttpMessageParseException {
         try {
             return HttpMethod.valueOf(method);
         } catch (IllegalArgumentException e) {
@@ -27,20 +30,18 @@ public class HttpMessageParser
         }
     }
 
-    public static float parseHttpVersion(String version) throws HttpMessageParseException
-    {
-        if (version.length() < 8)
-        {
+    public static float parseHttpVersion(String version) throws HttpMessageParseException {
+        if (version.length() < 8) {
             throw new HttpMessageParseException("HTTP Version string is too short: " + version);
         }
 
         char[] versionChars = version.toCharArray();
         if (
                 versionChars[0] != 'H' ||
-                versionChars[1] != 'T' ||
-                versionChars[2] != 'T' ||
-                versionChars[3] != 'P' ||
-                versionChars[4] != '/'
+                        versionChars[1] != 'T' ||
+                        versionChars[2] != 'T' ||
+                        versionChars[3] != 'P' ||
+                        versionChars[4] != '/'
         ) {
             throw new HttpMessageParseException("Invalid HTTP version string format: " + version);
         }
@@ -48,35 +49,35 @@ public class HttpMessageParser
         String versionNum = version.substring(5);
         try {
             return Float.parseFloat(versionNum);
-        } catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
             log.error(e.getMessage());
             throw new HttpMessageParseException("Invalid HTTP version number: " + versionNum);
         }
     }
 
-    public static Map<String, String> parseHttpMessageHeaders(BufferedReader bufReader)
-            throws HttpMessageParseException, IOException
-    {
+    public static Map<String, String> parseHttpMessageHeaders(InputStream iStream)
+            throws HttpMessageParseException, IOException {
         log.debug("Parsing the HTTP Message Headers...");
         Map<String, String> headers = new HashMap<>();
         while (true) {
             String line;
             try {
-                line = bufReader.readLine();
+                line = new String(Bytes.readLine(iStream));
             } catch (IOException e) {
                 log.error("Failed to read the next line from buffer because: " + e.getMessage());
                 throw e;
             }
 
-            if (line == null || line.isEmpty()) { break; }
+            if (line.isEmpty()) {
+                break;
+            }
 
             String[] headerKV = line.split(":");
-            if (headerKV.length < 2)
-            {
+            if (headerKV.length < 2) {
                 throw new HttpMessageParseException("Invalid HTTP Message Header format: " + line);
             }
 
-            String headerKey = headerKV[0].trim();
+            String headerKey = headerKV[0].trim().toLowerCase();
             String headerValue = headerKV[1].trim();
 
             headers.put(headerKey, headerValue);
@@ -84,5 +85,103 @@ public class HttpMessageParser
 
         log.debug("Successfully parsed the HTTP Message Headers!");
         return headers;
+    }
+
+    public static Object parseHttpMessageBody(InputStream iStream, Map<String, String> headers)
+            throws BadHttpRequestHeaderException, HttpMessageParseException, IOException {
+        byte[] messageBodyBytes = readMessageBodyBytes(iStream, headers);
+
+        if (messageBodyBytes != null)
+        {
+            log.fixme("HANDLE HTTP MESSAGE BODY ENCODING SHIT!!!");
+        }
+
+        return null;
+    }
+
+    public static byte[] readMessageBodyBytes(InputStream iStream, Map<String, String> headers)
+            throws BadHttpRequestHeaderException, HttpMessageParseException, IOException
+    {
+        String contentLength = headers.get(HttpEntityHeader.CONTENT_LENGTH.getName().toLowerCase());
+        String transferEncoding = headers.get(GeneralHeader.TRANSFER_ENCODING.getName().toLowerCase());
+
+        byte[] messageBodyBytes = null;
+
+        if (contentLength != null && transferEncoding != null) {
+            throw new BadHttpRequestHeaderException(
+                    "Both '" + HttpEntityHeader.CONTENT_LENGTH.getName() + "' and '" +
+                            GeneralHeader.TRANSFER_ENCODING.getName() + "' headers are present in the request."
+            );
+        } else if (contentLength != null) {
+            messageBodyBytes = readHttpMessageBody(iStream, contentLength);
+        } else if (transferEncoding != null) {
+            String lowerCaseTransferEncoding = transferEncoding.toLowerCase();
+            if (lowerCaseTransferEncoding.equals("chunked")) {
+                messageBodyBytes = readChunkedHttpMessageBody(iStream);
+            } else {
+                log.fixme("CHECK THE OTHER TRANSFER-ENCODING HEADER VALUES!!!");
+                throw new HttpMessageParseException(
+                        "Unsupported '" + GeneralHeader.TRANSFER_ENCODING.getName() + "' header value: " +
+                                lowerCaseTransferEncoding
+                );
+            }
+        }
+
+        return messageBodyBytes;
+    }
+
+    public static byte[] readHttpMessageBody(InputStream iStream, String contentLengthStr) throws HttpMessageParseException, IOException
+    {
+        int contentLength;
+        try {
+            contentLength = Integer.parseInt(contentLengthStr);
+        } catch (NumberFormatException e) {
+            throw new HttpMessageParseException(
+                    "Failed to convert '" + HttpEntityHeader.CONTENT_LENGTH.getName() + "' header value '" +
+                            contentLengthStr + "' into an integer value."
+            );
+        }
+
+        byte[] messageBodyBytes = new byte[contentLength];
+        Bytes.read(iStream, messageBodyBytes);
+
+        return messageBodyBytes;
+    }
+
+    public static byte[] readChunkedHttpMessageBody(InputStream iStream) throws HttpMessageParseException, IOException
+    {
+        ByteArrayOutputStream messageBodyBytes = new ByteArrayOutputStream();
+        byte[] nextChunk;
+        while ((nextChunk = readNextHttpMessageBodyChunk(iStream)) != null)
+        {
+            messageBodyBytes.writeBytes(nextChunk);
+        }
+
+        return messageBodyBytes.toByteArray();
+    }
+
+    public static byte[] readNextHttpMessageBodyChunk(InputStream iStream) throws HttpMessageParseException, IOException
+    {
+        String chunkSizeHex;
+        try {
+            chunkSizeHex = new String(Bytes.readLine(iStream));
+        } catch (IOException e) {
+            log.error("Failed to read an HTTP Message Body chunk size line");
+            throw e;
+        }
+
+        int chunkSize;
+        try {
+            chunkSize = Integer.parseInt(chunkSizeHex.trim(), 16);
+        } catch (NumberFormatException e) {
+            throw new HttpMessageParseException("Failed to parse the chunk size hex value '" + chunkSizeHex + "' into an integer value.");
+        }
+
+        if (chunkSize == 0) { return null; }
+
+        byte[] chunkBytes = new byte[chunkSize];
+        Bytes.read(iStream, chunkBytes);
+
+        return chunkBytes;
     }
 }

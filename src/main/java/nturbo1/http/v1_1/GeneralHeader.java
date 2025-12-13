@@ -13,15 +13,21 @@ package nturbo1.http.v1_1;
  *                | Via
  *                | Warning
  */
-public class GeneralHeader
+public enum GeneralHeader
 {
-    public static final String CACHE_CONTROL = "Cache-Control";
-    public static final String CONNECTION = "Connection";
-    public static final String DATE = "Date";
-    public static final String PRAGMA = "Pragma";
-    public static final String TRAILER = "Trailer";
-    public static final String TRANSFER_ENCODING = "Transfer-Encoding";
-    public static final String UPGRADE = "Upgrade";
-    public static final String VIA = "Via";
-    public static final String WARNING = "Warning";
+    CACHE_CONTROL("Cache-Control"),
+    CONNECTION("Connection"),
+    DATE("Date"),
+    PRAGMA("Pragma"),
+    TRAILER("Trailer"),
+    TRANSFER_ENCODING("Transfer-Encoding"),
+    UPGRADE("Upgrade"),
+    VIA("Via"),
+    WARNING("Warning");
+
+    private final String name;
+
+    GeneralHeader(String name) { this.name = name; }
+
+    public String getName() { return this.name; }
 }

@@ -1,13 +1,15 @@
 package nturbo1.http.parser.v1_1;
 
+import nturbo1.exceptions.parser.BadHttpRequestHeaderException;
 import nturbo1.exceptions.parser.HttpMessageParseException;
 import nturbo1.exceptions.parser.UnsupportedHttpVersionException;
 import nturbo1.http.HttpMethod;
 import nturbo1.http.v1_1.HttpRequest;
 import nturbo1.log.CustomLogger;
+import nturbo1.util.Bytes;
 
-import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 
 /**
@@ -24,21 +26,21 @@ public class HttpRequestParser
 {
     private static final CustomLogger log = CustomLogger.getLogger(HttpRequestParser.class.getName());
 
-    public static HttpRequest parseHttpRequest(BufferedReader bufReader)
-            throws HttpMessageParseException, UnsupportedHttpVersionException, IOException
+    public static HttpRequest parseHttpRequest(InputStream iStream)
+            throws BadHttpRequestHeaderException, HttpMessageParseException, UnsupportedHttpVersionException, IOException
     {
         String reqLine;
         try {
-            reqLine = bufReader.readLine();
+            reqLine = new String(Bytes.readLine(iStream));
         } catch (IOException e) {
             log.error("Failed to read a line from the socket input stream reader due to: " + e.getMessage());
             throw e;
         }
 
         HttpRequest req = parseHttpRequestLine(reqLine, null);
-        Map<String, String> headers = HttpMessageParser.parseHttpMessageHeaders(bufReader);
+        Map<String, String> headers = HttpMessageParser.parseHttpMessageHeaders(iStream);
         req.setHeaders(headers);
-        log.fixme("PARSE THE HTTP REQUEST BODY IF NECESSARY!!!!!!!!!!!!!!!");
+        req.setBody(HttpMessageParser.parseHttpMessageBody(iStream, headers));
 
         return req;
     }
