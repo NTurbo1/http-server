@@ -41,7 +41,7 @@ public class HttpServer
     public void start()
     {
         log.info("Listening on port " + port + "...");
-        log.fixme("Handle requests asynchronously!");
+        log.warn("Handle requests asynchronously!");
 
         while (true)
         {

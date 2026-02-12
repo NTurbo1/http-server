@@ -57,7 +57,7 @@ public class HttpRequestParser
         }
 
         HttpMethod method = HttpMessageParser.parseHttpMethod(words[0]);
-        log.fixme("IMPLEMENT REQUEST URI PARSER!!!"); // words[1]
+        log.warn("IMPLEMENT REQUEST URI PARSER!!!"); // words[1]
         float version = HttpMessageParser.parseHttpVersion(words[2]);
         if (HttpMessageParser.HTTP_VERSION_1_1 != version)
         {

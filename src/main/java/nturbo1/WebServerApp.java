@@ -12,7 +12,7 @@ import java.util.Map;
  * The HTTP Server application.
  *
  */
-public class HttpServerApplication
+public class WebServerApp
 {
     public static void main( String[] args )
     {

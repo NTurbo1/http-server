@@ -9,7 +9,8 @@ import java.util.Map;
 public class CommandLineParser {
     private CommandLineParser() {}
 
-    public static Map<String, String> parseArgs(String[] args) throws WrongArgFormatException, UnknownArgException {
+    public static Map<String, String> parseArgs(String[] args)throws WrongArgFormatException, UnknownArgException 
+    {
         Map<String, String> argsMap = new HashMap<>();
         for (String arg : args) {
             String[] argKV = verifyArg(arg);

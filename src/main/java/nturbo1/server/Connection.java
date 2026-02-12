@@ -38,10 +38,10 @@ public class Connection
             log.error("Failed to parse the HTTP request because: " + e.getMessage());
             // TODO: SEND A PROPER HTTP RESPONSE!!!
         } catch (UnsupportedHttpVersionException e) {
-            log.fixme("HANDLE UNSUPPORTED HTTP VERSION IN THE REQUEST CASE!!!!!!");
+            log.warn("HANDLE UNSUPPORTED HTTP VERSION IN THE REQUEST CASE!!!!!!");
             // TODO: SEND A PROPER HTTP RESPONSE!!!
         } catch (BadHttpRequestHeaderException e) {
-            log.fixme("SEND 400 BAD REQUEST RESPONSE!!!");
+            log.warn("SEND 400 BAD REQUEST RESPONSE!!!");
             // TODO: SEND A PROPER HTTP RESPONSE!!!
         } catch (IOException e) {
             log.error("Failed to parse an HTTP Request due to: " + e.getMessage());
@@ -52,7 +52,7 @@ public class Connection
         }
         log.info("Request: " + req);
 
-        log.fixme("HANDLE THE PARSED HTTP REQUEST AND SEND AN APPROPRIATE HTTP RESPONSE!!!");
+        log.warn("HANDLE THE PARSED HTTP REQUEST AND SEND AN APPROPRIATE HTTP RESPONSE!!!");
 
         close();
     }

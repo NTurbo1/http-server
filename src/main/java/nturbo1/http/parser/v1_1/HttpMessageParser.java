@@ -81,7 +81,7 @@ public class HttpMessageParser {
 
             String headerKey = headerKV[0].trim().toLowerCase();
             String headerValue = headerKV[1].trim();
-            log.fixme("HANDLE COMMA-SEPARATED HTTP HEADER VALUES FOR CERTAIN HEADERS!!!");
+            log.warn("HANDLE COMMA-SEPARATED HTTP HEADER VALUES FOR CERTAIN HEADERS!!!");
 
             List<String> headerValueList = headers.get(headerKey);
             if (headerValueList == null)
@@ -106,7 +106,7 @@ public class HttpMessageParser {
 
         if (messageBodyBytes != null)
         {
-            log.fixme("HANDLE HTTP MESSAGE BODY ENCODING SHIT!!!");
+            log.warn("HANDLE HTTP MESSAGE BODY ENCODING SHIT!!!");
         }
 
         return null;
@@ -132,7 +132,7 @@ public class HttpMessageParser {
             if (lowerCaseTransferEncoding.equals("chunked")) {
                 messageBodyBytes = readChunkedHttpMessageBody(iStream);
             } else {
-                log.fixme("CHECK THE OTHER TRANSFER-ENCODING HEADER VALUES!!!");
+                log.warn("CHECK THE OTHER TRANSFER-ENCODING HEADER VALUES!!!");
                 throw new HttpMessageParseException(
                         "Unsupported '" + GeneralHeader.TRANSFER_ENCODING.getName() + "' header value: " +
                                 lowerCaseTransferEncoding

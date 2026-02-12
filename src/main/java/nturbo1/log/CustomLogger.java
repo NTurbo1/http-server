@@ -9,10 +9,9 @@ import java.util.logging.Logger;
  * LOG LEVELS:
  * - FATAL == SEVERE = 1000
  * - ERROR = 950
- * - FIXME = 925
  * - WARN == WARNING = 900
  * - INFO == INFO = 800
- * - DEBUG = 750
+ * - DEBUG = 700
  */
 public class CustomLogger
 {
@@ -24,7 +23,6 @@ public class CustomLogger
     public void debug(String msg) { logger.log(DebugLevel.DEBUG, msg); }
     public void info(String msg) { logger.info(msg); }
     public void warn(String msg) { logger.log(WarnLevel.WARN, msg); }
-    public void fixme(String msg) { logger.log(FixMeLevel.FIXME, msg); }
     public void error(String msg) { logger.log(ErrorLevel.ERROR, msg); }
     public void fatal(String msg) { logger.log(FatalLevel.FATAL, msg); }
 }
