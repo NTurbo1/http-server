@@ -5,6 +5,7 @@ import nturbo1.exceptions.parser.HttpMessageParseException;
 import nturbo1.http.HttpMethod;
 import nturbo1.http.v1_1.GeneralHeader;
 import nturbo1.http.v1_1.HttpEntityHeader;
+import nturbo1.http.v1_1.HttpRequestHeader;
 import nturbo1.log.CustomLogger;
 import nturbo1.util.Bytes;
 
@@ -74,30 +75,54 @@ public class HttpMessageParser {
                 break;
             }
 
-            String[] headerKV = line.split(":");
+            String[] headerKV = line.split(":", 2);
             if (headerKV.length < 2) {
                 throw new HttpMessageParseException("Invalid HTTP Message Header format: " + line);
             }
 
             String headerKey = headerKV[0].trim().toLowerCase();
-            String headerValue = headerKV[1].trim();
-            log.warn("HANDLE COMMA-SEPARATED HTTP HEADER VALUES FOR CERTAIN HEADERS!!!");
+            List<String> headerValues = parseAndNormalizeHeaderValue(headerKey, headerKV[1]);
 
             List<String> headerValueList = headers.get(headerKey);
             if (headerValueList == null)
             {
-                headerValueList = new ArrayList<>();
-                headerValueList.add(headerValue);
-                headers.put(headerKey, headerValueList);
+                headerValueList = new ArrayList<>(headerValues);
             }
             else
             {
-                headerValueList.add(headerValue);
+                headerValueList.addAll(headerValues);
             }
+
+            headers.put(headerKey, headerValueList);
         }
 
         log.debug("Successfully parsed the HTTP Message Headers!");
         return headers;
+    }
+
+    public static boolean isHeaderCommaSeparatedList(String headerName)
+    {
+        return !headerName.equalsIgnoreCase(GeneralHeader.DATE.getName()) &&
+                !headerName.equalsIgnoreCase(HttpRequestHeader.USER_AGENT.getName());
+    }
+
+    private static List<String> parseAndNormalizeHeaderValue(String headerName, String headerValue)
+    {
+        List<String> headerVals = new ArrayList<>();
+        if (isHeaderCommaSeparatedList(headerName))
+        {
+            String[] commaSplitVals = headerValue.trim().split(",");
+            for (String val : commaSplitVals)
+            {
+                headerVals.add(val.trim());
+            }
+        }
+        else
+        {
+            headerVals.add(headerValue.trim());
+        }
+
+        return headerVals;
     }
 
     public static Object parseHttpMessageBody(InputStream iStream, Map<String, List<String>> headers)
