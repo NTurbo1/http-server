@@ -222,7 +222,7 @@ public class HttpMessageParser {
         {
             throw new InvalidHttpMessageHeaderException("HTTP message header name can't be empty!");
         }
-        if (headerName.contains(" "))
+        if (headerName.split("\\s", 2).length == 2)
         {
             throw new InvalidHttpMessageHeaderException("HTTP message header name can't contain space!");
         }
