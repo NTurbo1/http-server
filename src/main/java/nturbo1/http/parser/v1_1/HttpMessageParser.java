@@ -90,6 +90,11 @@ public class HttpMessageParser {
             }
             else
             {
+                if (HttpEntityHeader.CONTENT_LENGTH.name().equals(headerKey))
+                {
+                    throw new HttpMessageParseException("More than one instances of " + HttpEntityHeader.CONTENT_LENGTH +
+                            " header was encountered in the http message headers");
+                }
                 headerValueList.addAll(headerValues);
             }
 
@@ -125,18 +130,6 @@ public class HttpMessageParser {
         return headerVals;
     }
 
-    public static Object parseHttpMessageBody(InputStream iStream, Map<String, List<String>> headers)
-            throws BadHttpRequestHeaderException, HttpMessageParseException, IOException {
-        byte[] messageBodyBytes = readMessageBodyBytes(iStream, headers);
-
-        if (messageBodyBytes != null)
-        {
-            log.warn("HANDLE HTTP MESSAGE BODY ENCODING SHIT!!!");
-        }
-
-        return null;
-    }
-
     public static byte[] readMessageBodyBytes(InputStream iStream, Map<String, List<String>> headers)
             throws BadHttpRequestHeaderException, HttpMessageParseException, IOException
     {
@@ -146,6 +139,8 @@ public class HttpMessageParser {
         byte[] messageBodyBytes = null;
 
         if (contentLength != null && transferEncoding != null) {
+            log.warn(GeneralHeader.TRANSFER_ENCODING.name() + " should be preferred over " +
+                    HttpEntityHeader.CONTENT_LENGTH + " if both exist");
             throw new BadHttpRequestHeaderException(
                     "Both '" + HttpEntityHeader.CONTENT_LENGTH.getName() + "' and '" +
                             GeneralHeader.TRANSFER_ENCODING.getName() + "' headers are present in the request."

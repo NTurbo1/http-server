@@ -41,7 +41,7 @@ public class HttpRequestParser
         HttpRequest req = parseHttpRequestLine(reqLine, null);
         Map<String, List<String>> headers = HttpMessageParser.parseHttpMessageHeaders(iStream);
         req.setHeaders(headers);
-        req.setBody(HttpMessageParser.parseHttpMessageBody(iStream, headers));
+        req.setBody(HttpMessageParser.readMessageBodyBytes(iStream, headers));
 
         return req;
     }

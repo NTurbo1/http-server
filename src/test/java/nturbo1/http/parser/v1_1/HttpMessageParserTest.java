@@ -2,6 +2,7 @@ package nturbo1.http.parser.v1_1;
 
 import nturbo1.exceptions.parser.HttpMessageParseException;
 import nturbo1.http.HttpMethod;
+import nturbo1.log.CustomLogger;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -19,6 +20,7 @@ import java.util.stream.Stream;
 
 class HttpMessageParserTest
 {
+    private static final CustomLogger log = CustomLogger.getLogger(HttpMessageParserTest.class.getName());
     private static class TestParseHttpHeaders
     {
         public byte[] headersBytes;
@@ -78,25 +80,35 @@ class HttpMessageParserTest
     {
         InputStream is = new ByteArrayInputStream(testHeaders.headersBytes);
         Map<String, List<String>> parsedHeadersMap = HttpMessageParser.parseHttpMessageHeaders(is);
-        System.out.println("expectedParsedHeadersMap = " + testHeaders.expectedParsedHeadersMap);
-        System.out.println("parsedHeadersMap = " + parsedHeadersMap);
 
         for (String headerName : testHeaders.expectedParsedHeadersMap.keySet())
         {
-            System.out.println("headerName = " + headerName);
             List<String> headerValues = parsedHeadersMap.get(headerName);
             Assertions.assertThat(headerValues).isNotNull();
 
             List<String> expectedHeaderValues = testHeaders.expectedParsedHeadersMap.get(headerName);
             for (int i = 0; i < expectedHeaderValues.size(); i++)
             {
-                System.out.println("headerValues.get(i) = " + headerValues.get(i));
-                System.out.println("expectedHeaderValues.get(i) = " + expectedHeaderValues.get(i));
                 Assertions.assertThat(headerValues.get(i)).isEqualTo(expectedHeaderValues.get(i));
             }
         }
 
         is.close();
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidHttpMessageHeadersBytes")
+    void givenInvalidHttpHeaders_whenParsingHttpMessageHeaders_thenThrowException(byte[] headersBytes)
+    {
+        log.info("Testing headerBytes: " + new String(headersBytes));
+        InputStream is = new ByteArrayInputStream(headersBytes);
+        Assertions.assertThatThrownBy(() -> HttpMessageParser.parseHttpMessageHeaders(is));
+    }
+
+    @Test
+    void givenTooManyHeaders_whenParsingHttpMessageHeaders_thenThrowException()
+    {
+        // TODO: Read too many headers input from a file and test
     }
 
     static Stream<TestParseHttpHeaders> validHttpMessageHeadersBytes()
@@ -249,7 +261,117 @@ class HttpMessageParserTest
                 new TestParseHttpHeaders(
                         "X-Custom-Header: foo, bar, baz\r\nX-Another-One: value\r\n\r\n".getBytes(StandardCharsets.UTF_8),
                         Map.of("x-custom-header", List.of("foo", "bar", "baz"), "x-another-one", List.of("value"))
+                ),
+
+                /* LF ONLY LINE TERMINATION */
+                new TestParseHttpHeaders(
+                        "Host: example.com\n".getBytes(StandardCharsets.UTF_8),
+                        Map.of("host", List.of("example.com"))
+                ),
+                new TestParseHttpHeaders(
+                        "Header: value\nAnother: value\n\n".getBytes(StandardCharsets.UTF_8),
+                        Map.of("header", List.of("value"), "another", List.of("value"))
+                ),
+                new TestParseHttpHeaders(
+                        "Host: example.com\r\nUser-Agent: test\nAccept: */*\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                        Map.of("host", List.of("example.com"),
+                                "user-agent", List.of("test"),
+                                "accept", List.of("*/*")
+                        )
                 )
+        );
+    }
+
+    static Stream<byte[]> invalidHttpMessageHeadersBytes()
+    {
+        return Stream.of(
+                /* LINE TERMINATION ERROR */
+                // Missing CRLF (LF only)
+                // CR only
+                "Host: example.com\r".getBytes(StandardCharsets.UTF_8),
+                // No final empty line
+                "Host: example.com\r\nUser-Agent: test\r\n".getBytes(StandardCharsets.UTF_8),
+
+                /* HEADER NAME SYNTAX VIOLATIONS */
+                // Empty header name
+                ": value\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Whitespace in header name
+                "Bad Header: value\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Tab in header name
+                "Bad\tHeader: value\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Control characters in header name
+                "Bad\u0001Header: value\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Non-token characters
+                "Bad@Header: value\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                "Bad/Header: value\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Unicode in header name
+                "Høst: value\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+
+                /* COLON ERRORS */
+                // Missing colon
+                "Host example.com\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Multiple colons before value
+                "Host:: example.com\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Colon after whitespace
+                "Host : example.com\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Colon at end
+                "Host:\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+
+                /* HEADER VALUE SYNTAX ERRORS */
+                // Leading whitespace without obs-fold context
+                " Host: example.com\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Value with raw CR
+                "Header: value\rmore\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Value with raw LF
+                "Header: value\nmore\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Embedded NULL byte
+                "Header: value\u0000test\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Unescaped control characters
+                "Header: value\u0007\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+
+                /* OBSOLETE LINE FOLDING (OBS-FOLD) ABUSE */
+                // Obs-fold without previous header
+                " value\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Obs-fold starting with tab only
+                "Header: value\r\n\tcontinued\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Obs-fold containing CRLF inside value
+                "Header: value\r\ncontinued\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+
+                /* DUPLICATE AND FORBIDDEN HEADERS */
+                // Duplicate Host header
+                "Host: example.com\r\nHost: evil.com\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Multiple Content-Length headers
+                "Content-Length: 10\r\nContent-Length: 20\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Conflicting Transfer-Encoding and Content-Length headers
+                "Transfer-Encoding: chunked\r\nContent-Length: 5\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+
+                /* HEADER SECTION STRUCTURAL ERRORS */
+                // Garbage before headers
+                "garbage\r\nHost: example.com\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Header after empty line
+                "Host: example.com\r\n\r\nUser-Agent: test\r\n".getBytes(StandardCharsets.UTF_8),
+                // Multiple empty lines inside headers
+                "Host: example.com\r\n\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+
+                /* SIZE AND LENGTH VIOLATIONS */
+                // Extremely long header name
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: value\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Extremely long value
+                "Header: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+
+                /* INVALID TRANSFER-ENCODING VALUES */
+                "Transfer-Encoding: chunked, chunked\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                "Transfer-Encoding: gzip, chunked, invalid\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+
+                /* INVALID CONTENT-LENGTH VALUES */
+                // Non-numeric
+                "Content-Length: abc\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Negative
+                "Content-Length: -5\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Decimal
+                "Content-Length: 5.5\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                // Leading plus
+                "Content-Length: +10\r\n\r\n".getBytes(StandardCharsets.UTF_8)
         );
     }
 }
