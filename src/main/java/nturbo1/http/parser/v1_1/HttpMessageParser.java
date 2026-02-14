@@ -72,16 +72,13 @@ public class HttpMessageParser {
                 throw e;
             }
 
-            if (line.isEmpty()) {
+            if (line.isEmpty()) { // End of the http message headers section
                 break;
             }
 
-            String[] headerKV = line.split(":", 2);
-            if (headerKV.length < 2) {
-                throw new InvalidHttpMessageHeaderException("Invalid HTTP Message Header format: " + line);
-            }
+            String[] headerKV = parseHttpMessageHeaderLine(line);
 
-            String headerKey = headerKV[0].trim().toLowerCase();
+            String headerKey = headerKV[0];
             List<String> headerValues = parseAndNormalizeHeaderValue(headerKey, headerKV[1]);
 
             List<String> headerValueList = headers.get(headerKey);
@@ -217,5 +214,30 @@ public class HttpMessageParser {
         Bytes.read(iStream, chunkBytes);
 
         return chunkBytes;
+    }
+
+    private static void validateHttpMessageHeaderName(String headerName) throws InvalidHttpMessageHeaderException
+    {
+        if (headerName.isEmpty())
+        {
+            throw new InvalidHttpMessageHeaderException("HTTP message header name can't be empty!");
+        }
+        if (headerName.contains(" "))
+        {
+            throw new InvalidHttpMessageHeaderException("HTTP message header name can't contain space!");
+        }
+    }
+
+    private static String[] parseHttpMessageHeaderLine(String line) throws InvalidHttpMessageHeaderException
+    {
+        String[] headerKV = line.split(":", 2);
+        if (headerKV.length < 2) {
+            throw new InvalidHttpMessageHeaderException("Invalid HTTP Message Header format: " + line);
+        }
+        headerKV[0] = headerKV[0].trim().toLowerCase();
+        validateHttpMessageHeaderName(headerKV[0]);
+        headerKV[1] = headerKV[1].trim();
+
+        return headerKV;
     }
 }
