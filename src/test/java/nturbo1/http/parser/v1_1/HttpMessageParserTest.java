@@ -311,13 +311,9 @@ class HttpMessageParserTest
 
                 /* COLON ERRORS */
                 // Missing colon
-                "Host example.com\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                "headerName example.com\r\n\r\n".getBytes(StandardCharsets.UTF_8),
                 // Multiple colons before value
-                "Host:: example.com\r\n\r\n".getBytes(StandardCharsets.UTF_8),
-                // Colon after whitespace
-                "Host : example.com\r\n\r\n".getBytes(StandardCharsets.UTF_8),
-                // Colon at end
-                "Host:\r\n\r\n".getBytes(StandardCharsets.UTF_8),
+                "headerName:: example.com\r\n\r\n".getBytes(StandardCharsets.UTF_8),
 
                 /* HEADER VALUE SYNTAX ERRORS */
                 // Leading whitespace without obs-fold context

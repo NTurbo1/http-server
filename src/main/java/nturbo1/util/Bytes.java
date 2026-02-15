@@ -56,18 +56,32 @@ public class Bytes
     {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         int nextByte;
+        int continuousColonCount = 0; // whitespace is ignored between 2 colons
 
+        readLoop:
         while ((nextByte = iStream.read()) != -1)
         {
-            if (nextByte == '\n') { break; }
-            else if (nextByte == '\r')
+            switch (nextByte)
             {
-                int n = iStream.read();
-                if (n == '\n') { break; }
-                else
-                {
-                    throw new InvalidHttpMessageHeaderException("Invalid header line ending with: \r");
-                }
+                case '\n':
+                    break readLoop;
+                case '\r':
+                    int n = iStream.read();
+                    if (n == '\n') { break readLoop; }
+                    else
+                    {
+                        throw new InvalidHttpMessageHeaderException("Invalid header line ending with: \r");
+                    }
+                case ':':
+                    continuousColonCount++;
+                    if (continuousColonCount == 2)
+                    {
+                        throw new InvalidHttpMessageHeaderException("Invalid header line containing double colons.");
+                    }
+                case ' ':
+                    break;
+                default:
+                    continuousColonCount = 0;
             }
 
             buf.write(nextByte);

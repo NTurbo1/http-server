@@ -17,11 +17,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class HttpMessageParser {
     public static final char CARRIAGE_RETURN_CHAR = 13;
     public static final char LINE_FEED_CHAR = 10;
     public static final float HTTP_VERSION_1_1 = 1.1f;
+
+    public static final String HTTP_MESSAGE_HEADER_NAME_REGEX = "[0-9a-zA-Z!#$%&'*+.^_`|~-]+";
 
     private static final CustomLogger log = CustomLogger.getLogger(HttpMessageParser.class.getName());
 
@@ -218,13 +221,9 @@ public class HttpMessageParser {
 
     private static void validateHttpMessageHeaderName(String headerName) throws InvalidHttpMessageHeaderException
     {
-        if (headerName.isEmpty())
+        if (!Pattern.matches(HTTP_MESSAGE_HEADER_NAME_REGEX, headerName))
         {
-            throw new InvalidHttpMessageHeaderException("HTTP message header name can't be empty!");
-        }
-        if (headerName.split("\\s", 2).length == 2)
-        {
-            throw new InvalidHttpMessageHeaderException("HTTP message header name can't contain space!");
+            throw new InvalidHttpMessageHeaderException("Invalid HTTP message header name.");
         }
     }
 
